@@ -1,5 +1,6 @@
 const { analyzeMarket } = require('./agents/marketResearch');
 const { generatePRD } = require('./agents/prdGenerator');
+const { saveIdea } = require('./utils/saveIdea');
 
 async function validateIdea(productIdea) {
   try {
@@ -31,6 +32,8 @@ async function validateIdea(productIdea) {
     console.log(`- Review product specification`);
     console.log(`- Decision: BUILD / REFINE / PARK\n`);
 
+    // Save idea to JSON
+    await saveIdea(result);
     return result;
   } catch (error) {
     console.error('❌ Validation failed:', error.message);
