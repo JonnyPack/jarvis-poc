@@ -32,7 +32,7 @@
         <div class="panel">
             <h2>💡 Your Idea</h2>
             <textarea id="ideaInput" placeholder="Describe your product idea..."></textarea>
-            <button onclick="validateIdea()">Validate Idea</button>
+            <button id="validateBtn" onclick="validateIdea()">Validate Idea</button>
         </div>
 
         <div class="panel results" id="results">
@@ -47,7 +47,7 @@
     </div>
 
     <script>
-        function validateIdea() {
+        async function validateIdea() {
             const idea = document.getElementById('ideaInput').value.trim();
             
             if (!idea) {
@@ -55,20 +55,57 @@
                 return;
             }
 
-            const resultContent = `
-                <h3>Market Analysis</h3>
-                <p><strong>Market Size:</strong> $1.5B</p>
-                <p><strong>Competitors:</strong> Trainerize, TrueCoach, My PT Hub</p>
-                <p><strong>Opportunity Score:</strong> 7/10</p>
-                <h3 style="margin-top: 20px;">Product Specification</h3>
-                <p><strong>Problem:</strong> Personal trainers lack AI tools</p>
-                <p><strong>Solution:</strong> AI chatbot for client engagement</p>
-                <p><strong>Features:</strong> Plan generation, progress tracking, 24/7 support</p>
-            `;
+            const button = document.getElementById('validateBtn');
+            button.disabled = true;
+            button.textContent = 'Validating...';
 
-            document.getElementById('resultContent').innerHTML = resultContent;
-            document.getElementById('results').style.display = 'block';
-            document.getElementById('decisionButtons').style.display = 'flex';
+            try {
+                const response = await fetch('/api/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ idea })
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    alert('Error: ' + result.error);
+                    button.textContent = 'Validate Idea';
+                    button.disabled = false;
+                    return;
+                }
+
+                const data = result.data;
+
+                const resultContent = `
+                    <h3>Market Analysis</h3>
+                    <p><strong>Market Size:</strong> ${data.market_research.market_size}</p>
+                    <p><strong>Competitors:</strong> ${data.market_research.main_competitors.join(', ')}</p>
+                    <p><strong>Trends:</strong> ${data.market_research.trends.join(', ')}</p>
+                    <p><strong>Opportunity Score:</strong> ${data.market_research.opportunity_score}/10</p>
+                    
+                    <h3 style="margin-top: 20px;">Product Specification</h3>
+                    <p><strong>Title:</strong> ${data.prd.title}</p>
+                    <p><strong>Problem:</strong> ${data.prd.problem_statement}</p>
+                    <p><strong>Solution:</strong> ${data.prd.solution}</p>
+                    <p><strong>Target Users:</strong> ${data.prd.target_users.join(', ')}</p>
+                    <p><strong>Features:</strong> ${data.prd.key_features.map(f => f.name).join(', ')}</p>
+                    <p><strong>Success Metrics:</strong> ${data.prd.success_metrics.join(', ')}</p>
+                    <p><strong>Timeline:</strong> ${data.prd.estimated_launch_timeline}</p>
+                `;
+
+                document.getElementById('resultContent').innerHTML = resultContent;
+                document.getElementById('results').style.display = 'block';
+                document.getElementById('decisionButtons').style.display = 'flex';
+
+            } catch (error) {
+                alert('Connection error: ' + error.message);
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Validate Idea';
+            }
         }
 
         function handleDecision(decision) {
